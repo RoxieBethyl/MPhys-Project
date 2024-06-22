@@ -1,0 +1,4 @@
+export STARLINK_DIR=/mnt/c/Starlink/star-2021A-REV1
+source $STARLINK_DIR/etc/profile
+
+C:\Users\blysh\miniconda3\condabin
