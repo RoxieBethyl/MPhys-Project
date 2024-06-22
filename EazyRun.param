@@ -1,0 +1,5 @@
+Catalogue       .\Output\Catalogue\Catalogue_MODIFIEDFils_all.pkl
+MagCut          False
+SigCut          False
+Outfile         .\Output\Catalogue\EazyOutfile.txt
+MarkHeader      True
