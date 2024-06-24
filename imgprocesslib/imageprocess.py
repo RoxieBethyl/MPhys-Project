@@ -3,24 +3,90 @@ Created on Thu Oct 07 23:29:49 2023
 @author: blybelle
 """
 
+"""
+Overview
+--------
+This Python module, `imageprocess.py`, is designed for processing astronomical images, particularly focusing on the extraction of objects and calculation of their flux from FITS files. It leverages various libraries for handling FITS files, performing numerical operations, and conducting source extraction and photometry.
+The core functionality is encapsulated within the `ExtractObjectsFlux` class, which initializes with a data file and optional parameters for background width, filter width, among others. It supports extensive customization through keyword arguments, allowing for tailored processing of astronomical images.
+
+Dependencies
+------------
+- imgprocesslib: Custom library for basic image processing tasks.
+- os, sys: Standard Python libraries for system operations.
+- copy.deepcopy: For creating deep copies of objects.
+- tqdm: For displaying progress bars.
+- pickle: For object serialization and deserialization.
+- sep: For source extraction and photometry.
+- numpy (np): For numerical operations.
+- astropy.io.fits: For handling FITS files.
+- astropy.modeling.functional_models (models): For modeling astronomical objects.
+- astropy.convolution: For image convolution operations.
+- scipy.optimize.minimize: For mathematical optimization.
+- matplotlib.pyplot (plt), matplotlib.colors.Normalize, matplotlib (mpl): For plotting and visualization.
+
+Classes
+-------
+ExtractObjectsFlux
+    A class designed for extracting objects from astronomical images and calculating their flux. It allows for significant customization through its initialization parameters and keyword arguments.
+
+    Parameters:
+    - datafile (str): Path to the FITS file containing the astronomical image.
+    - bw (int): Background width for the extraction process. Default is 64.
+    - fw (int): Filter width for the extraction process. Default is 3.
+    - **kwargs: Additional keyword arguments for further customization.
+
+    Supported Keyword Arguments:
+    - objxlim, objylim: Limits for object extraction in the x and y dimensions.
+    - bh, fh: Background and filter heights.
+    - dpi: Dots per inch for plotting.
+    - gain: Gain of the image sensor.
+    - ylim, xlim: Limits for plotting in the y and x dimensions.
+    - title: Title for the plot.
+    - cmap: Colormap for the plot.
+    - vmin, vmax: Minimum and maximum values for color scaling.
+    - norm: Normalization for the plot.
+    - detThesh: Detection threshold for object extraction.
+    - convolve: Boolean indicating whether to convolve the image.
+    - kernel: Kernel to use for convolution.
+    - minarea: Minimum area for detected objects.
+    - inBuffer: Buffer area around detected objects.
+    - PLOT: Boolean indicating whether to plot the results.
+    - CONVOLVE: Boolean indicating whether to perform convolution.
+
+Usage
+-----
+To use this module, instantiate the `ExtractObjectsFlux` class with the path to a FITS file and any desired parameters or keyword arguments. The class provides methods (not detailed here) for extracting objects and calculating their flux, which can be called on the instantiated object.
+
+Example
+-------
+```python
+from imageprocess import ExtractObjectsFlux
+
+# Initialize with a FITS file path and optional parameters
+extractor = ExtractObjectsFlux('path/to/fitsfile.fits', bw=32, fw=5, PLOT=True)
+
+# Call methods on `extractor` to process the image
+"""
+
+
 from imgprocesslib import homedir
 import os
 import sys
 from copy import deepcopy
 from tqdm import tqdm
-import sep
 import pickle
+
+import sep
 import numpy as np
 from astropy.io import fits
 import astropy.modeling.functional_models as models
 from astropy.convolution import convolve, Gaussian2DKernel, Moffat2DKernel
 from scipy.optimize import minimize
-#import colormaps as cmaps
 import matplotlib.pyplot as plt
 from matplotlib.colors import Normalize
 import matplotlib as mpl
 mpl.rcParams['font.family'] = 'Times New Roman'
-from multiprocessing import Pool, TimeoutError
+from multiprocessing import Pool
 import multiprocessing as mp
 
 

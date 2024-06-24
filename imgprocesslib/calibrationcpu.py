@@ -3,6 +3,51 @@ Created on Mon Nov 05 00:29:45 2023
 @author: blybelle
 """
 
+"""
+Overview
+--------
+This Python module, `calibrationcpu.py`, is designed for performing sky calibration on astronomical images stored in FITS format. It focuses on CPU-based processing, making it accessible for environments without GPU support. The core functionality is provided by the `SkyCalibration` class, which extracts sky calibration data from FITS files.
+
+Dependencies
+------------
+- imgprocesslib: Custom library for basic image processing tasks, including accessing the home directory.
+- os: Standard Python library for interacting with the operating system.
+- warnings: For suppressing specific warning messages, particularly `FITSFixedWarning` from `astropy`.
+- tqdm: For displaying progress bars during lengthy operations.
+- pickle: For object serialization and deserialization.
+- csv: For reading from and writing to CSV files.
+- sep: For source extraction and photometry.
+- numpy (np): For numerical operations.
+- astropy.io.fits: For reading and writing FITS files.
+- astropy.wcs: For World Coordinate System (WCS) transformations.
+- astropy.convolution: For convolving images with specific kernels, such as `Moffat2DKernel`.
+- matplotlib.pyplot (plt), matplotlib.colors.Normalize, matplotlib (mpl): For plotting and visualizing images. Configured to use 'Times New Roman' font.
+
+Classes
+-------
+SkyCalibration
+    A class designed to extract sky calibration data from a FITS file. It initializes with the path to a FITS file and an aperture size, among other parameters.
+
+    Attributes:
+    - datafile (str): Path to the FITS file.
+    - aper_size (int): Aperture size for calibration.
+
+Usage
+-----
+To use this module, instantiate the `SkyCalibration` class with the path to a FITS file and the desired aperture size. The class provides methods (not detailed here) for performing the sky calibration.
+
+Example
+-------
+```python
+from calibrationcpu import SkyCalibration
+
+# Initialize the SkyCalibration class with a FITS file and aperture size
+calibrator = SkyCalibration('path/to/fitsfile.fits', aper_size=5)
+
+# Call methods on `calibrator` to perform sky calibration
+
+"""
+
 from imgprocesslib import homedir
 #import imageprocess as ip
 import os
@@ -24,61 +69,58 @@ from matplotlib.colors import Normalize
 import matplotlib as mpl
 mpl.rcParams['font.family'] = 'Times New Roman'
 
-#from multiprocessing import Pool, TimeoutError
-#import multiprocessing as mp
-
-
 
 class SkyCalibration():
+    """
+    A class to extract the sky calibration from a FITS file.
+
+    Attributes:
+    -----------
+    datafile: str
+        The path to the FITS file.
+    aper_size: int
+        The aperture size.
+    bw: int
+        The background width.
+    fw: int
+        The foreground width.
+    **kwargs: dict
+
+    Optional:
+    --------- 
+    objxlim: tuple
+        The x limits for the object plot.
+    objylim: tuple
+        The y limits for the object plot.
+    xlim: tuple
+        The x limits for the image plot.
+    ylim: tuple
+        The y limits for the image plot.
+    dpi: int
+        The dpi of the image plot.
+    title: str
+        The title of the image plot.
+    cmap: str
+        The colour map of the image plot.
+    vmin: float
+        The minimum value of the image plot.
+    vmax: float
+        The maximum value of the image plot.
+    norm: matplotlib.colors.Normalize
+        The normalisation of the image plot.
+    detThesh: float
+        The detection threshold for Source Extractor.
+    step_size: int
+        The step size for the apertures.
+    tolerance: float
+        The tolerance for the aperture flux.
+    SAVE: boolean
+        If True, the data will be saved.
+    processors: int
+        The number of processors to use.
+    """
     def __init__(self, datafile, aper_size, bw=64, fw=3, **kwargs):
-        """
-        Parameters:
-        -----------
-        datafile: str
-            The path to the FITS file.
-        aper_size: int
-            The aperture size in radius.
-        bw: int (2*n)
-            The background width.
-        fw: int (2*n)
-            The foreground width.
-        **kwargs: dict
-            The keyword arguments.
         
-        Optional:
-        ---------
-        objxlim: tuple
-            The x limits for the object plot.
-        objylim: tuple
-            The y limits for the object plot.
-        xlim: tuple
-            The x limits for the image plot.
-        ylim: tuple
-            The y limits for the image plot.
-        dpi: int
-            The dpi of the image plot.
-        title: str
-            The title of the image plot.
-        cmap: str
-            The colour map of the image plot.
-        vmin: float
-            The minimum value of the image plot.
-        vmax: float
-            The maximum value of the image plot.
-        norm: matplotlib.colors.Normalize
-            The normalisation of the image plot.
-        detThesh: float
-            The detection threshold for Source Extractor.
-        step_size: int
-            The step size for the apertures.
-        tolerance: float
-            The tolerance for the aperture flux.
-        SAVE: boolean
-            If True, the data will be saved.
-        processors: int
-            The number of processors to use.
-            
-        """
         poskwargs = ['objxlim', 'objylim', 'bh', 'fh', 'dpi', 'gain', 'ylim', 'xlim', 
                      'title', 'cmap', 'vmin', 'vmax', 'norm', 'detThesh', 'step_size', 
                      'tolerance', 'processors', 'kernel', 'filetype', 'SAVE', 'CONVOLVE',
@@ -180,31 +222,6 @@ class SkyCalibration():
                 self.y_list.append(y_list)
                 self.sky_flux.append(sky_flux)
 
-
-        # self.objs, self.seg_map = sep.extract(self.data, self.detThesh, err=self.bkg.globalrms, segmentation_map=True)
-                
-        # # Making list
-        # # Perform make_apertures computation on CPU
-        # self.x_list, self.y_list = self.make_apertures(self.data, int(self.aper_size*2 + self.step_size))
-
-        # # Grabbing flux from data to remove any apertures where the detector doesn't contain data
-        # flux, _ , _ = sep.sum_circle(self.data, self.x_list, self.y_list, self.aper_size, err=self.bkg.globalrms)
-    
-        # # Begin filtering out apertures that don't contain data
-        # self.x_list = self.x_list[~np.isclose(flux, 0., atol=1e-4)]
-        # self.y_list = self.y_list[~np.isclose(flux, 0., atol=1e-4)]
-
-        # # Grabbing flux from segementation map to remove any apertures that would collect object flux
-        # # Want to keep only apertures on sky background
-        # self.sky_flux, _ , _ = sep.sum_circle(self.seg_map, self.x_list, self.y_list, self.aper_size, err=self.bkg.globalrms)
-
-        # self.x_list = self.x_list[self.sky_flux == 0]
-        # self.y_list = self.y_list[self.sky_flux == 0]
-
-        # # Grabbing the flux from sky apertures that should be close to zero
-        # self.sky_flux, _ , _ = sep.sum_circle(self.data, self.x_list, self.y_list, self.aper_size, err=self.bkg.globalrms)
-
-        # Get RA and Dec for X and Y lists
         try:
             with warnings.catch_warnings():
                 warnings.simplefilter("ignore", FITSFixedWarning)

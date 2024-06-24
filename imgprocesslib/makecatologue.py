@@ -33,6 +33,10 @@ from multiprocessing import Pool
 
 
 class MakeCatologue():
+    """
+    
+    
+    """
     torch.cuda.profiler.start()    
     def __init__(self, detect_image, phot_images, aper_size, bw=64, fw=3, 
                  change_kwargs={}, **kwargs):

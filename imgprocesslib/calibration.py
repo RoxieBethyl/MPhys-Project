@@ -3,14 +3,59 @@ Created on Mon Nov 05 00:29:45 2023
 @author: blybelle
 """
 
-import torch
-#from torch.cuda import FloatTensor
+"""
+calibration.py
+==============
 
-from imgprocesslib import homedir
-#import imageprocess as ip
+Overview
+--------
+This module, `calibration.py`, is designed for performing sky calibration on astronomical images, specifically those stored in FITS format. It provides a class, `SkyCalibration`, which facilitates the calibration process by applying various image processing techniques. The module leverages the power of PyTorch for potential GPU acceleration, making it suitable for handling large datasets efficiently.
+
+Dependencies
+------------
+- torch: For GPU acceleration and profiling.
+- imgprocesslib: A custom library for basic image processing tasks.
+- os: For interacting with the file system.
+- warnings: For suppressing specific warning messages.
+- tqdm: For displaying progress bars during processing.
+- pickle: For object serialization and deserialization.
+- csv: For reading from and writing to CSV files.
+- sep: For source extraction and photometry.
+- numpy: For numerical operations.
+- astropy.io.fits: For reading and writing FITS files.
+- astropy.wcs: For World Coordinate System (WCS) transformations.
+- astropy.convolution: For convolving images with specific kernels.
+- matplotlib.pyplot, matplotlib.colors: For plotting and visualizing images.
+
+Classes
+-------
+SkyCalibration
+    A class that provides methods for performing sky calibration on astronomical images. It initializes with the path to a FITS file and various parameters related to the calibration process.
+
+Usage
+-----
+To use this module, instantiate the `SkyCalibration` class with the path to a FITS file and the desired aperture size. Optional parameters include background width (bw) and filter width (fw).
+
+Example
+-------
+```python
+from calibration import SkyCalibration
+
+# Initialize the SkyCalibration class with a FITS file and aperture size
+calibrator = SkyCalibration('path/to/fitsfile.fits', aper_size=5)
+
+# Additional methods can be called on the calibrator object to perform specific calibration tasks
+
+"""
+
+
+import torch
+
 import os
 import warnings
 from tqdm import tqdm
+
+from imgprocesslib import homedir
 
 import pickle
 import csv
@@ -96,8 +141,7 @@ class SkyCalibration():
 
         if not isinstance(datafile, str):
             raise TypeError("Data type is too large for one instance; use multifileflux() for this instance.")
-        else:
-            self.datafile = datafile
+        self.datafile = datafile
         
         DEFAULTS = {
             'bh': self.bw,
@@ -206,15 +250,58 @@ class SkyCalibration():
             self.save(file_type=self.filetype)
 
     def worker_wrapper_extract(self, argkwargs):
+        """
+        Wrapper for the Source Extractor extraction function. (Function not used in current implementation.)
+        
+        Parameters:
+        -----------
+        argkwargs: tuple
+            The arguments and keyword arguments for the extraction function.
+            
+        Returns:
+        --------
+        objs: numpy.ndarray
+            The objects found in the image. 
+        seg_map: numpy.ndarray
+            The segmentation map of the image.
+        """
+
         self.data, self.detThesh, self.bkg.globalrms, segmentation_map = argkwargs
         return sep.extract(self.data, self.detThesh, err=self.bkg.globalrms, segmentation_map=segmentation_map)
     
 
     def worker_wrapper_sumcircle(self, argkwargs):
+        """
+        Wrapper for the Source Extractor sum_circle function. (Function not used in current implementation.)
+
+        Parameters:
+        -----------
+        argkwargs: tuple
+            The arguments and keyword arguments for the sum_circle function.
+        
+        Returns:
+        --------
+        flux: numpy.ndarray
+            The flux of the object.
+        fluxerr: numpy.ndarray
+            The error in the flux of the object.
+        flag: numpy.ndarray
+            The flag of the object.
+        """
+
         self.data, self.x_list, self.y_list, self.aper_size, self.bkg.globalrms = argkwargs
         return sep.sum_circle(self.data, self.x_list, self.y_list, self.aper_size, err=self.bkg.globalrms)
 
     def save(self, file_type='pkl'):
+        """
+        Saves the data to a file.
+
+        Parameters:
+        -----------
+        file_type: str or list
+            The file type(s) to save the data to.
+        """
+
         file_type = list([file_type]) if isinstance(file_type, str) else file_type
         if self.CONVOLVE:
             theWord = 'convolved'
@@ -356,7 +443,7 @@ class SkyCalibration():
 
     def plot_map(self, **kwargs):
         """
-        Plots the image of the FITS file and some useful information is provided if asked for with Booleans
+        Plots the image of the FITS file and some useful information is provided if asked for with Booleans as arguments to the function.
         
         Optional:
         ---------
@@ -457,22 +544,19 @@ def plot_dist(file, aper_size, bw=64, fw=3, step_size=1, PLOT=False, **kwargs):
 
 def get_hist_info(data, bins=30):
     """
-    Derive the appropriate numbers in the data
+    Derive the appropriate numbers in the data for a histogram plot. 
 
     Parameters:
     -----------
     data: ndarray
         Array of the x coordinates of the data
-    
     bins (optional): Integer
         Bins of the histogram; changes the number of scatter points to outputs
-
 
     Returns:
     --------
     bins: 
         X values of the dataset in the histogram (taken as the of each bin)
-        
     n: 
         Y values of the dataset (frequency or occurences in each bin)
     """
@@ -484,15 +568,88 @@ def get_hist_info(data, bins=30):
     return bins, n
 
 def lim_mag(sigma):
+    """
+    Converts the standard deviation of the sky flux to a limiting magnitude.
+
+    Parameters:
+    -----------
+    sigma: float
+        The standard deviation of the sky flux.
+
+    Returns:
+    --------
+    float
+        The limiting magnitude.
+    """
     return (-2.5 * np.log10(5*sigma) + 23.90)
 
 
 def worker_wrapper(argkwargs):
+    """
+    Worker wrapper for the SkyCalibration class. (Function not used in current implementation.)
+    
+    Parameters:
+    -----------
+    argkwargs: tuple
+        The arguments and keyword arguments for the SkyCalibration class.
+        
+    Returns:
+    --------
+    SkyCalibration
+        The SkyCalibration object.
+    """
+
     datafile, aper_size, bw, fw, kwargs = argkwargs
     return SkyCalibration(datafile, aper_size, bw, fw, **kwargs)
 
 
 def init_SkyCalibration(datafiles, aper_val, target_datafile=None, bw=64, fw=3, change_kwargs=None, **kwargs):
+    """
+    Initialises the SkyCalibration class for multiple data files. 
+
+    Parameters:
+    -----------
+    datafiles: list
+        The list of data files.
+    aper_val: int or list
+        The aperture size.
+    target_datafile: str (optional)
+        The target data file.
+    bw: int (optional)
+        The background width.
+    fw: int (optional)
+        The foreground width.
+    change_kwargs: dict (optional)
+        The dictionary of keyword arguments to change.
+    **kwargs: dict
+        The keyword arguments for the SkyCalibration class.
+
+    Optional:
+    ---------
+    CONVOLVE: bool
+        If True, the data will be convolved.
+    gamma: float
+        The gamma value for the Moffat2DKernel.
+    alpha: float
+        The alpha value for the Moffat2DKernel.
+    kernel: astropy.convolution.Moffat2DKernel
+        The kernel for the convolution.
+    filetype: str
+        The file type for saving the data.
+    SAVE: bool
+        If True, the data will be saved.
+    processors: int
+        The number of processors to use.
+    inBuffer: int
+        The buffer size for Source Extractor.
+    chunk_size: int
+        The chunk size for the data.
+
+    Returns:
+    --------
+    None
+    """
+
     def wrapper():
         img_objs = SkyCalibration(file, aper_size, bw=bw, fw=fw, **kwargs)
         pbar.update()
@@ -531,18 +688,3 @@ def init_SkyCalibration(datafiles, aper_val, target_datafile=None, bw=64, fw=3, 
             wrapper()
 
     print("FINISHED")
-
-'''
-    processors = kwargs.get('processors', mp.cpu_count() - 1)
-    kwargs.pop('processors', None)
-
-    results = []
-    with mp.Pool(processes=processors) as pool:
-        args_list = [(datafile, aper_size, bw, fw, kwargs) for datafile in datafiles]
-        for res in tqdm(pool.imap(worker_wrapper, args_list), total=len(datafiles)):
-            results.append(res)
-
-    print("FINISHED")
-    return results
-
-'''

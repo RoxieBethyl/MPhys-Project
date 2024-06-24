@@ -3,6 +3,55 @@ Created on Thu Oct 07 23:29:49 2023
 @author: blybelle
 """
 
+"""
+Overview
+--------
+This module, `imageprocess__`, is designed for processing astronomical images contained in FITS files. It provides functionalities for extracting objects from these images and calculating their flux. Additionally, it includes a method for convolving the image with a Moffat2DKernel, which is useful to normalise the effects of varying spatial resolution on point sources.
+The module leverages several external libraries, including `numpy` for numerical operations, `astropy` for FITS file handling and convolution operations, `scipy` for optimization tasks, and `matplotlib` for plotting. It also utilizes `pytorch` for potential GPU-accelerated operations, and `sep` for source extraction and photometry.
+
+Classes
+-------
+ExtractObjectsFlux
+    A class designed to extract objects from a FITS file and calculate their flux. It supports customization of the background width and filter width through its initialization parameters.
+
+Dependencies
+------------
+- os
+- sys
+- copy.deepcopy
+- tqdm
+- torch
+- torch.cuda.FloatTensor
+- imgprocesslib.homedir
+- sep
+- pickle
+- numpy
+- astropy.io.fits
+- astropy.modeling.functional_models
+- astropy.convolution.convolve, Gaussian2DKernel, Moffat2DKernel
+- scipy.optimize.minimize
+- matplotlib.pyplot
+- matplotlib.colors.Normalize
+- matplotlib
+
+Usage
+-----
+To use this module, instantiate the `ExtractObjectsFlux` class with the path to a FITS file. Optionally, background width and filter width parameters can be adjusted. The class provides methods for extracting objects and calculating their flux, as well as for convolving the image with a Moffat2DKernel.
+
+Example
+-------
+```python
+from imageprocess__ import ExtractObjectsFlux
+
+# Initialize with a FITS file path
+extractor = ExtractObjectsFlux('path/to/fitsfile.fits')
+
+# Additional functionality can be explored by accessing methods within ExtractObjectsFlux
+This module is used to extract objects from a FITS file and find the flux of the objects in the file. 
+The module also contains a function to convolve the image with a Moffat2DKernel. 
+
+"""
+
 import os
 import sys
 from copy import deepcopy
@@ -23,58 +72,55 @@ import matplotlib.pyplot as plt
 from matplotlib.colors import Normalize
 import matplotlib as mpl
 mpl.rcParams['font.family'] = 'Times New Roman'
-from multiprocessing import Pool, TimeoutError
-import multiprocessing as mp
 
 
 class ExtractObjectsFlux:
-    def __init__(self, datafile, bw=64, fw=3, **kwargs):
-        """
-        Extracts objects from a FITS file and finds the flux of the objects in the file.
+    """
+    Extracts objects from a FITS file and finds the flux of the objects in the file.
 
-        Parameters
-        ----------
-        datafile: str
-            File path of the image in .FITS format sent for plotting.
-        bw: int, optional
-            Background width in pixels. The default is 64.
-        fw: int, optional
-            Background height in pixels. The default is 3.
-        **kwargs: dict
-            Optional arguments for the class.
-        
-        Optional Parameters
-        -------------------
-        objxlim: tuple, optional
-            Tuple of the x-axis limits of the object in pixels. The default is (None, None).
-        objylim: tuple, optional
-            Tuple of the y-axis limits of the object in pixels. The default is (None, None).
-        xlim: tuple, optional
-            Tuple of the x-axis limits of the image in pixels. The default is (None, None).
-        ylim: tuple, optional
-            Tuple of the y-axis limits of the image in pixels. The default is (None, None).
-        dpi: int, optional
-            Dots per inch of the image. The default is 500.
-        title: str, optional
-            Title of the image. The default is os.path.basename(self.datafile).
-        cmap: str, optional   
-            Colour map of the image. The default is 'afmhot'.
-        vmin: int, optional
-            Lower percentile of the image. The default is 35.
-        vmax: int, optional
-            Upper percentile of the image. The default is 95.
-        norm: matplotlib.colors.Normalize, optional
-            Normalisation of the image. The default is Normalize(vmin=np.percentile(fits.getdata(self.datafile), self.vmin), vmax=np.percentile(fits.getdata(self.datafile), self.vmax)).
-        detThesh: int, optional
-            Detection threshold of the image. The default is 10.
-        CONVOLVE: bool, optional 
-            Boolean to convolve the image. The default is False.
-        
-        Returns
-        -------
-        None.
-        """
-        
+    Parameters
+    ----------
+    datafile: str
+        File path of the image in .FITS format sent for plotting.
+    bw: int, optional
+        Background width in pixels. The default is 64.
+    fw: int, optional
+        Background height in pixels. The default is 3.
+    **kwargs: dict
+        Optional arguments for the class.
+
+    Optional
+    --------
+    objxlim: tuple
+        Tuple of the x-axis limits of the object in pixels. The default is (None, None).
+    objylim: tuple
+        Tuple of the y-axis limits of the object in pixels. The default is (None, None).
+    xlim: tuple
+        Tuple of the x-axis limits of the image in pixels. The default is (None, None).
+    ylim: tuple
+        Tuple of the y-axis limits of the image in pixels. The default is (None, None).
+    dpi: int
+        Dots per inch of the image. The default is 500.
+    title: str
+        Title of the image. The default is os.path.basename(self.datafile).
+    cmap: str
+        Colour map of the image. The default is 'afmhot'.
+    vmin: int
+        Lower percentile of the image. The default is 35.
+    vmax: int
+        Upper percentile of the image. The default is 95.
+    norm: matplotlib.colors.Normalize
+        Normalisation of the image. The default is Normalize(vmin=np.percentile(fits.getdata(self.datafile), self.vmin), vmax=np.percentile(fits.getdata(self.datafile), self.vmax)).
+    detThesh: int
+        Detection threshold of the image. The default is 10.
+    CONVOLVE: bool
+        Boolean to convolve the image. The default is False.
+
+    Returns
+    -------
+    None.
+    """
+    def __init__(self, datafile, bw=64, fw=3, **kwargs):
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
         poskwargs = ['objxlim', 'objylim', 'bh', 'fh', 'dpi', 'gain', 'ylim', 'xlim', 
@@ -157,10 +203,6 @@ class ExtractObjectsFlux:
 
         self.flux, _ , _ = sep.sum_circle(self.data.cpu().numpy(), self.objs['x'].cpu().numpy(), self.objs['y'].cpu().numpy(), self.aptR, err=self.bkg.cpu().numpy().globalrms)
 
-        # fluxL = torch.zeros((len(self.objxlim) if isinstance(self.objxlim, np.ndarray) else len(self.data.cpu().numpy())), device=self.device)
-        # xL = torch.zeros_like(fluxL)
-        # yL = torch.zeros_like(fluxL)
-
         x = self.objxlim_new if isinstance(self.objxlim_new, np.ndarray) else self.data.cpu().numpy()
         y = self.objylim_new if isinstance(self.objylim_new, np.ndarray) else self.data.cpu().numpy()
         self.mask = torch.tensor((x[0] < self.objs['x'].cpu().numpy() < x[1] and y[0] < self.objs['y'].cpu().numpy() < y[1])).to(self.device)
@@ -174,34 +216,7 @@ class ExtractObjectsFlux:
         if SAVE:
             self.save(CONVOLVE=CONVOLVE)
 
-        # for tar, x, y in zip(range(len(self.objxlim) if isinstance(self.objxlim, np.ndarray) else len(self.data.cpu().numpy())), 
-        #                         self.objxlim_new if isinstance(self.objxlim_new, np.ndarray) else self.data.cpu().numpy(), 
-        #                         self.objylim_new if isinstance(self.objylim_new, np.ndarray) else self.data.cpu().numpy()):
-
-        #     for i, (obj_x, obj_y) in enumerate(zip(self.objs['x'], self.objs['y'])):
-        #         if x[0] < obj_x < x[1] and y[0] < obj_y < y[1]:
-        #             if DEBUG:
-        #                 tqdm.write("{:.0f}: Object {:d} {:f} {:f}: flux = {:f} ± {:f}".format(fileNo, i, obj_x+self.zero_x, obj_y+self.zero_y, flux[i], fluxerr[i]))
-                    
-        #             fluxL[tar] = flux[i]
-        #             fluxerrL[tar] = fluxerr[i]
-        #             xL[tar] = obj_x + self.zero_x
-        #             yL[tar] = obj_y + self.zero_y
-
-        #         else:
-        #             notfound += 1
-        #             continue
-        
-
     def save(self, CONVOLVE=False):
-        # return  {'flux': self.fluxL, 
-        #              #'fluxerr': fluxerrL, 
-        #              'x': self.objs['x'],
-        #              'y': self.objs['y'], 
-        #              'Objs not found': len(~mask)
-        #              }
-            
-
         output_dir = os.path.join(homedir, 'Output')
         if not os.path.exists(output_dir):
             os.makedirs(output_dir)
@@ -319,6 +334,48 @@ class ExtractObjectsFlux:
 
 
 def convolve_moffat(datafile_target, datafiles, apers, Aper_target=10, bw=64, fw=3, change_params=None, SAVE=True, **kwargs):
+    """
+    Convolve the target file with a Moffat2DKernel and find the flux of the objects in the file.
+
+    Parameters
+    ----------
+    datafile_target: str
+        File path of the target image in .FITS format sent for plotting.
+    datafiles: list
+        List of file paths of the images in .FITS format sent for plotting.
+    apers: list
+        List of aperture sizes in pixels.
+    Aper_target: int, optional
+        Aperture size in pixels. The default is 10.
+    bw: int, optional
+        Background width in pixels. The default is 64.
+    fw: int, optional
+        Background height in pixels. The default is 3.
+    change_params: dict, optional
+        Dictionary of parameters to change. The default is None.
+    SAVE: bool, optional
+        Boolean to save the data. The default is True.
+    **kwargs: dict
+        Optional arguments for the class.
+
+    Optional
+    --------
+    gamma_range: list
+        List of gamma values for the Moffat2DKernel. The default is [2].
+    alpha_range: list
+        List of alpha values for the Moffat2DKernel. The default is [2].
+    gamma: int
+        Gamma value for the Moffat2DKernel. The default is 2.
+    alpha: int
+        Alpha value for the Moffat2DKernel. The default is 2.
+    CONVOLVE: bool
+        Boolean to convolve the image. The default is False.
+
+    Returns
+    -------
+    None.
+    """
+
     len_files = len(datafiles)
     for datafile in datafiles:
         if datafile_target == datafile:
@@ -426,30 +483,42 @@ def convolve_moffat(datafile_target, datafiles, apers, Aper_target=10, bw=64, fw
     return {'target': target_data, 'convolved': conv_data}
 
 
-
-
-def aperFindFlux(datafile, AptR, bw=64, fw=3, fileNo=0, OWN=True, **kwargs):
-    pass
-
-
-    # if OWN:
-    #     if not os.path.exists(homedir+'Output'):
-    #         os.makedirs(homedir+'Output')
-    #     with open(homedir+'Output/{4}_{0}_{1}_apers({2}-{3}).pkl'.format(int(np.average(data[0]['x'])), 
-    #                                                                        int(np.average(data[0]['y'])), 
-    #                                                                        AptR[0], AptR[-1], 
-    #                                                                        os.path.basename(datafile).rsplit('_', 2)[0].rsplit('_', 1)[1]), 'wb') as file:
-    #         pickle.dump({'notfound': data[-1]['Objs not found'], 'results': resDataFile}, file)
-
-    #     print('DATA WRITTEN TO FILE: {4}_{0}_{1}_apers({2}-{3}).pkl'.format(int(np.average(data[0]['x'])), 
-    #                                                                          int(np.average(data[0]['y'])), 
-    #                                                                          AptR[0], AptR[-1], 
-    #                                                                          os.path.basename(datafile).rsplit('_', 2)[0].rsplit('_', 1)[1]))
-
-    # return resDataFile
-
-
 def multiAperFileFlux(files, bw=64, fw=3, change_params=None, OWN=True, **kwargs):
+    """
+    Extracts objects from multiple FITS files and finds the flux of the objects in the files.
+
+    Parameters
+    ----------
+    files: list
+        List of file paths of the images in .FITS format sent for plotting.
+    bw: int, optional
+        Background width in pixels. The default is 64.
+    fw: int, optional
+        Background height in pixels. The default is 3.
+    change_params: dict, optional
+        Dictionary of parameters to change. The default is None.
+    OWN: bool, optional
+        Boolean to print progress. The default is True.
+    **kwargs: dict
+        Optional arguments for the class.
+
+    Optional
+    --------
+    aptR: int
+        Aperture size in pixels. The default is 10.
+    gamma: int
+        Gamma value for the Moffat2DKernel. The default is 2.
+    alpha: int
+        Alpha value for the Moffat2DKernel. The default is 2.
+    CONVOLVE: bool
+        Boolean to convolve the image. The default is False.
+
+    Returns
+    -------
+    ResData: list
+        List of dictionaries containing the flux of the objects in the files.
+    """
+
     if not isinstance(change_params, dict):
         raise TypeError("Expected type \'dict\'. Remove key \'change_params\', if parameters do not change.")
     
@@ -504,63 +573,3 @@ def multiAperFileFlux(files, bw=64, fw=3, change_params=None, OWN=True, **kwargs
             ResData.append(data)
 
     return ResData
-
-    # if SAVE:
-    #     save(file_dir, data, apers, CONVOLVE=False)
-    #     save(target_data, conv_data, apers)
-
-
-    # if save:
-    #     if not os.path.exists(homedir+'Output'):
-    #         os.makedirs(homedir+'Output')
-    #     with open(homedir+'Output/{0}_{1}_apers({2}-{3}).pkl'.format(int(np.average(data[0]['x'])), 
-    #                                                                    int(np.average(data[0]['y'])), 
-    #                                                                    AptR[0], AptR[-1]), 'wb+') as file:
-    #         pickle.dump(ResData, file)
-    #     print('DATA WRITTEN TO FILE: {0}_{1}_apers({2}-{3}).pkl'.format(int(np.average(data[0]['x'])), 
-    #                                                                      int(np.average(data[0]['y'])), 
-    #                                                                      AptR[0], AptR[-1]))
-
-    # if notfound != 0:
-    #     print('OBJECTS NOT FOUND:', notfound)
-
-    # return ResData
-
-#
-
-
-#
-
-
-#
-def make_chunks(a, no_of_chunks=2):
-    k, m = divmod(len(a), no_of_chunks)
-    return [a[i*k+min(i, m):(i+1)*k+min(i+1, m)] for i in range(no_of_chunks)]
-
-
-def worker_wrapper(argskwargs):
-    print(argskwargs)
-    args, kwargs = argskwargs
-    return convolve_once(*args, **kwargs)
-
-
-def convolve_once(datafile_target, datafiles, target_i, target_flux, apers, bw=64, fw=3, gamma=2, alpha=1, change_params=None, **kwargs):
-    conv_data = []
-    for fileNo, file in enumerate(datafiles):
-        kwargs['kernel'] = Moffat2DKernel(gamma=gamma, alpha=alpha)
-
-        if file == datafile_target:
-            continue
-
-        for key in change_params:
-            kwargs[key] = change_params[key][fileNo]
-
-        res = minimize(conv_min_, [alpha, gamma], args=(target_i, target_flux, file, apers, bw, fw, kwargs), method='Nelder-Mead', options={'return_all': True})
-
-        print(res.x)
-
-        kwargs['kernel'] = Moffat2DKernel(gamma=gamma, alpha='some')
-
-        conv_data.append(aperFindFlux(file, apers, bw, fw, fileNo=0, OWN=False, **kwargs))
-
-    return conv_data
