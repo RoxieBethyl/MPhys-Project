@@ -3,8 +3,48 @@ Created on Mon Nov 05 00:29:45 2023
 @author: blybelle
 """
 
+"""
+Overview
+--------
+This Python module, `makecataloguecpu.py`, is designed for creating astronomical catalogues from images stored in FITS format, focusing on CPU-based processing. It utilizes multiprocessing to efficiently handle large datasets. The core functionality is provided by the `MakeCatalogue` class, which orchestrates the detection of astronomical objects and the calculation of their photometric properties.
+
+Dependencies
+------------
+- imgprocesslib: Custom library for accessing basic image processing utilities.
+- os: Standard Python library for interacting with the operating system.
+- warnings: For suppressing specific warning messages, particularly `FITSFixedWarning` from `astropy`.
+- tqdm: For displaying progress bars during lengthy operations.
+- pickle: For object serialization and deserialization.
+- csv: For reading from and writing to CSV files.
+- sep: For source extraction and photometry.
+- numpy (np): For numerical operations.
+- astropy.io.fits: For reading and writing FITS files.
+- astropy.wcs: For World Coordinate System (WCS) transformations.
+- astropy.convolution: For convolving images with specific kernels, such as `Moffat2DKernel`.
+- matplotlib.pyplot (plt), matplotlib.colors.Normalize, matplotlib (mpl): For plotting and visualizing images. Configured to use 'Times New Roman' font.
+- multiprocessing (mp), multiprocessing.Pool: For parallel processing to improve performance on multi-core systems.
+
+Classes
+-------
+MakeCatalogue
+    A class designed to create astronomical catalogues from FITS files. It initializes with parameters for the detection image, photometric images, aperture size, background width, filter width, and additional keyword arguments for customization.
+
+    Parameters:
+    - detect_image (str): Path to the FITS file used for object detection.
+    - phot_images (list): List of paths to FITS files for photometric measurements.
+    - aper_size (int): Aperture size for photometry.
+    - bw (int, optional): Background width for source extraction. Default is 64.
+    - fw (int, optional): Filter width for source extraction. Default is 3.
+    - change_kwargs (dict, optional): Dictionary of keyword arguments to modify default processing behavior.
+    - **kwargs: Arbitrary keyword arguments for further customization.
+
+Usage
+-----
+To use this module, instantiate the `MakeCatalogue` class with the required parameters and any optional keyword arguments. The class provides methods (not detailed here) for processing the FITS files and generating the catalogue.
+"""
+
+
 from imgprocesslib import homedir
-#import imageprocess as ip
 import os
 import warnings
 from tqdm import tqdm
@@ -29,69 +69,76 @@ from multiprocessing import Pool
 
 
 
-class MakeCatologue():   
+class MakeCatologue():
+    """
+    Class to make a catologue of objects from a FITS file.
+    
+    Parameters:
+    -----------
+    detect_image: str
+        The path to the FITS file of detection image.
+    phot_images: list
+        The list of paths to the FITS files of photometric images.
+    aper_size: int
+        The aperture size in radius.
+    bw: int (2*n)
+        The background width.
+    fw: int (2*n)
+        The foreground width.
+    change_kwargs: dict
+        The keyword arguments for individual phot_image.
+    **kwargs: dict
+        The keyword arguments.
+    
+    Optional:
+    ---------
+    objxlim: tuple
+        The x limits for the object plot.
+    objylim: tuple
+        The y limits for the object plot.
+    xlim: tuple
+        The x limits for the image plot.
+    ylim: tuple
+        The y limits for the image plot.
+    dpi: int
+        The dpi of the image plot.
+    title: str
+        The title of the image plot.
+    cmap: str
+        The colour map of the image plot.
+    vmin: float
+        The minimum value of the image plot.
+    vmax: float
+        The maximum value of the image plot.
+    norm: matplotlib.colors.Normalize
+        The normalisation of the image plot.
+    detThesh: float
+        The detection threshold for Source Extractor.
+    step_size: int
+        The step size for the apertures.
+    tolerance: float
+        The tolerance for the aperture flux.
+    processors: int
+        The number of processors to use.
+    kernel: astropy.convolution.Moffat2DKernel
+        The kernel for convolution.
+    filetype: str
+        The file type for saving.
+    SAVE: boolean
+        If True, the data will be saved.
+    CONVOLVE: bool
+        If True, the data will be convolved.
+    CatalogueMap: bool
+        If True, a map of the objects will be saved.
+            
+    Returns:
+    --------
+    None.
+    """
+
     def __init__(self, detect_image, phot_images, aper_size, bw=64, fw=3, 
                  change_kwargs={}, **kwargs):
-        """
-        Parameters:
-        -----------
-        detect_image: str
-            The path to the FITS file of detection image.
-        phot_images: list
-            The list of paths to the FITS files of photometric images.
-        aper_size: int
-            The aperture size in radius.
-        bw: int (2*n)
-            The background width.
-        fw: int (2*n)
-            The foreground width.
-        change_kwargs: dict
-            The keyword arguments for individual phot_image.
-        **kwargs: dict
-            The keyword arguments.
         
-        Optional:
-        ---------
-        objxlim: tuple
-            The x limits for the object plot.
-        objylim: tuple
-            The y limits for the object plot.
-        xlim: tuple
-            The x limits for the image plot.
-        ylim: tuple
-            The y limits for the image plot.
-        dpi: int
-            The dpi of the image plot.
-        title: str
-            The title of the image plot.
-        cmap: str
-            The colour map of the image plot.
-        vmin: float
-            The minimum value of the image plot.
-        vmax: float
-            The maximum value of the image plot.
-        norm: matplotlib.colors.Normalize
-            The normalisation of the image plot.
-        detThesh: float
-            The detection threshold for Source Extractor.
-        step_size: int
-            The step size for the apertures.
-        tolerance: float
-            The tolerance for the aperture flux.
-        processors: int
-            The number of processors to use.
-        kernel: astropy.convolution.Moffat2DKernel
-            The kernel for convolution.
-        filetype: str
-            The file type for saving.
-        SAVE: boolean
-            If True, the data will be saved.
-        CONVOLVE: bool
-            If True, the data will be convolved.
-        CatalogueMap: bool
-            If True, a map of the objects will be saved.
-            
-        """
         poskwargs = ['objxlim', 'objylim', 'bh', 'fh', 'dpi', 'gain', 'ylim', 'xlim', 
                      'title', 'cmap', 'vmin', 'vmax', 'norm', 'detThesh', 'step_size', 
                      'tolerance', 'processors', 'kernel', 'filetype', 'SAVE', 'CONVOLVE',
@@ -245,7 +292,7 @@ class MakeCatologue():
                 kwargs['kernel'] = Moffat2DKernel(gamma=gamma, alpha=alpha)
 
                 if self.CONVOLVE:
-                    chunk_size = 5000  # Adjust this value based on your system's memory
+                    chunk_size = 5000  # Adjust this value based on system's memory
                     convolved_data = np.empty_like(data)
                     for i in range(0, data.shape[0], chunk_size):
                         for j in range(0, data.shape[1], chunk_size):
@@ -254,7 +301,6 @@ class MakeCatologue():
                             convolved_data[i:i+chunk_size, j:j+chunk_size] = convolved_chunk
                     
                     data = convolved_data
-                    #data = convolve(data, kwargs['kernel'], normalize_kernel=True)
 
             else:
                 self._sub1 = True
@@ -282,6 +328,7 @@ class MakeCatologue():
 
 
     '''
+    [Needs to be removed]
     def get_flux(self, gkwargs):
         if gkwargs is None:
             gkwargs = {}
@@ -319,6 +366,19 @@ class MakeCatologue():
         '''
 
     def save(self, file_type='pkl'):
+        """
+        Saves the data to a file.
+
+        Parameters:
+        -----------
+        file_type: str or list
+            The file type for saving the data.
+
+        Returns:
+        --------
+        None.
+        """
+
         print("")
         file_type = list([file_type]) if isinstance(file_type, str) else file_type
 
@@ -386,9 +446,10 @@ class MakeCatologue():
     
             print("Data written to \"{}\"".format(filepath(filename)))
     
-                    
-    #def __str__(self):
+
+
     '''
+    [Needs to be removed]
     def process_file(self, args):
             fileNo, file, kwargs, device, bw, bh, fw, fh, x_list, y_list, aper_size, CONVOLVE = args
             if isinstance(kwargs, dict):
@@ -638,6 +699,7 @@ def lim_mag(sigma):
 
 
 '''
+[Needs to be removed]
 def worker_wrapper(argkwargs):
     datafile, aper_size, bw, fw, kwargs = argkwargs
     return SkyCalibration(datafile, aper_size, bw, fw, **kwargs)

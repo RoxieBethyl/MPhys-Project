@@ -3,6 +3,43 @@ Created on Mon Nov 05 00:29:45 2023
 @author: blybelle
 """
 
+"""
+Overview
+--------
+This Python module, `makecatalogue.py`, is designed for creating astronomical catalogues from images stored in FITS format. It leverages multiprocessing for efficient processing of large datasets. The core functionality is encapsulated within the `MakeCatalogue` class, which prepares and processes the data to generate a catalogue.
+
+Dependencies
+------------
+- torch: For leveraging PyTorch functionalities, although specific usage within this excerpt is not shown.
+- imgprocesslib: Custom library for accessing basic image processing utilities, such as the home directory.
+- os: Standard Python library for interacting with the operating system.
+- warnings: For suppressing specific warning messages, particularly `FITSFixedWarning` from `astropy`.
+- tqdm: For displaying progress bars during lengthy operations.
+- pickle: For object serialization and deserialization.
+- csv: For reading from and writing to CSV files.
+- sep: For source extraction and photometry.
+- numpy (np): For numerical operations.
+- astropy.io.fits: For reading and writing FITS files.
+- astropy.wcs: For World Coordinate System (WCS) transformations.
+- astropy.convolution: For convolving images with specific kernels, such as `Moffat2DKernel`.
+- matplotlib.pyplot (plt), matplotlib.colors.Normalize, matplotlib (mpl): For plotting and visualizing images. Configured to use 'Times New Roman' font.
+- multiprocessing (mp), multiprocessing.Pool: For parallel processing to improve performance on multi-core systems.
+
+Classes
+-------
+MakeCatalogue
+    A class designed for creating astronomical catalogues from FITS files. It is initialized without parameters in the provided excerpt, and the methods for processing and catalogue creation are not detailed here.
+
+Usage
+-----
+To use this module, instantiate the `MakeCatalogue` class and call its methods to process FITS files and generate a catalogue. The specific methods and their usage are not provided in the excerpt.
+
+Notes
+-----
+- Methods in this file may cause errors. 
+"""
+
+
 import torch
 #from torch.cuda import FloatTensor
 
@@ -34,72 +71,75 @@ from multiprocessing import Pool
 
 class MakeCatologue():
     """
+    Class to make a catologue of objects from a FITS file.
     
+    Parameters:
+    -----------
+    detect_image: str
+        The path to the FITS file of detection image.
+    phot_images: list
+        The list of paths to the FITS files of photometric images.
+    aper_size: int
+        The aperture size in radius.
+    bw: int (2*n)
+        The background width.
+    fw: int (2*n)
+        The foreground width.
+    change_kwargs: dict
+        The keyword arguments for individual phot_image.
+    **kwargs: dict
+        The keyword arguments.
     
+    Optional:
+    ---------
+    objxlim: tuple
+        The x limits for the object plot.
+    objylim: tuple
+        The y limits for the object plot.
+    xlim: tuple
+        The x limits for the image plot.
+    ylim: tuple
+        The y limits for the image plot.
+    dpi: int
+        The dpi of the image plot.
+    title: str
+        The title of the image plot.
+    cmap: str
+        The colour map of the image plot.
+    vmin: float
+        The minimum value of the image plot.
+    vmax: float
+        The maximum value of the image plot.
+    norm: matplotlib.colors.Normalize
+        The normalisation of the image plot.
+    detThesh: float
+        The detection threshold for Source Extractor.
+    step_size: int
+        The step size for the apertures.
+    tolerance: float
+        The tolerance for the aperture flux.
+    processors: int
+        The number of processors to use.
+    kernel: astropy.convolution.Moffat2DKernel
+        The kernel for convolution.
+    filetype: str
+        The file type for saving.
+    SAVE: boolean
+        If True, the data will be saved.
+    CONVOLVE: bool
+        If True, the data will be convolved.
+    CatalogueMap: bool
+        If True, a map of the objects will be saved.
+            
+    Returns:
+    --------
+    None.
     """
+
     torch.cuda.profiler.start()    
     def __init__(self, detect_image, phot_images, aper_size, bw=64, fw=3, 
                  change_kwargs={}, **kwargs):
-        """
-        Parameters:
-        -----------
-        detect_image: str
-            The path to the FITS file of detection image.
-        phot_images: list
-            The list of paths to the FITS files of photometric images.
-        aper_size: int
-            The aperture size in radius.
-        bw: int (2*n)
-            The background width.
-        fw: int (2*n)
-            The foreground width.
-        change_kwargs: dict
-            The keyword arguments for individual phot_image.
-        **kwargs: dict
-            The keyword arguments.
         
-        Optional:
-        ---------
-        objxlim: tuple
-            The x limits for the object plot.
-        objylim: tuple
-            The y limits for the object plot.
-        xlim: tuple
-            The x limits for the image plot.
-        ylim: tuple
-            The y limits for the image plot.
-        dpi: int
-            The dpi of the image plot.
-        title: str
-            The title of the image plot.
-        cmap: str
-            The colour map of the image plot.
-        vmin: float
-            The minimum value of the image plot.
-        vmax: float
-            The maximum value of the image plot.
-        norm: matplotlib.colors.Normalize
-            The normalisation of the image plot.
-        detThesh: float
-            The detection threshold for Source Extractor.
-        step_size: int
-            The step size for the apertures.
-        tolerance: float
-            The tolerance for the aperture flux.
-        processors: int
-            The number of processors to use.
-        kernel: astropy.convolution.Moffat2DKernel
-            The kernel for convolution.
-        filetype: str
-            The file type for saving.
-        SAVE: boolean
-            If True, the data will be saved.
-        CONVOLVE: bool
-            If True, the data will be convolved.
-        CatalogueMap: bool
-            If True, a map of the objects will be saved.
-            
-        """
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
         poskwargs = ['objxlim', 'objylim', 'bh', 'fh', 'dpi', 'gain', 'ylim', 'xlim', 
@@ -187,6 +227,7 @@ class MakeCatologue():
         self.y_list = torch.tensor(np.ascontiguousarray(self.objs['y']), dtype=torch.float32).to(self.device)
 
         print("Objects discovered: {}".format(len(self.objs)))
+
         # Get RA and Dec for X and Y lists
         try:
             with warnings.catch_warnings():
@@ -214,6 +255,15 @@ class MakeCatologue():
         print("FINISHED")
 
     def filtering(self):
+        """
+        Filters out apertures that don't contain data or collect object flux.
+        
+        Returns:
+        --------
+        x_list, y_list, flux: torch.tensor
+            The lists of x and y coordinates and the flux of the apertures.
+        """
+
         # Making list
         # Perform make_apertures computation on GPU
         self.x_list, self.y_list = self.make_apertures(self.data.cpu().numpy(), int(self.aper_size*2 + self.step_size))
@@ -241,6 +291,20 @@ class MakeCatologue():
 
 
     def process_file(self, args):
+        """
+        Processes the FITS file and returns the flux of the apertures.
+        
+        Parameters:
+        -----------
+        args: tuple
+            The arguments for the function.
+        
+        Returns:
+        --------
+        dict
+            The flux of the apertures.
+        """
+
         fileNo, file, gkwargs, convolve = args
         kwargs = {}
 
@@ -280,6 +344,20 @@ class MakeCatologue():
             return {f"{file.rsplit('_', 2)[0].rsplit('_', 1)[1]}": flux}
 
     def get_flux(self, gkwargs):
+        """
+        Gets the flux of the apertures from the photometric images.
+
+        Parameters:
+        -----------
+        gkwargs: dict
+            The keyword arguments for the photometric images.
+        
+        Returns:
+        --------
+        dict
+            The flux of the apertures.
+        """
+
         if gkwargs is None:
             gkwargs = {}
 
@@ -310,7 +388,8 @@ class MakeCatologue():
         return flux_data
 
 
-    '''
+    ''' 
+    [Old method for get_flux()]
     def get_flux(self, gkwargs):
         if gkwargs is None:
             gkwargs = {}
@@ -348,6 +427,19 @@ class MakeCatologue():
         '''
 
     def save(self, file_type='pkl'):
+        """
+        Saves the data to a file.
+
+        Parameters:
+        -----------
+        file_type: str or list
+            The file type for saving the data.
+
+        Returns:
+        --------
+        None.
+        """
+
         print("")
         file_type = list([file_type]) if isinstance(file_type, str) else file_type
 
@@ -415,41 +507,51 @@ class MakeCatologue():
     
             print("Data written to \"{}\"".format(filepath(filename)))
     
-                    
-    #def __str__(self):
-
     def process_file(self, args):
-            fileNo, file, kwargs, device, bw, bh, fw, fh, x_list, y_list, aper_size, CONVOLVE = args
-            if isinstance(kwargs, dict):
-                for key in kwargs:                
-                    if CONVOLVE:          
-                        if 'gamma' == key:
-                            gamma = kwargs[key][fileNo]
+        """
+        Processes the FITS file and returns the flux of the apertures.
 
-                        elif 'alpha' == key:
-                            alpha = kwargs[key][fileNo]
-                            
-                        kwargs['kernel'] = Moffat2DKernel(gamma=gamma, alpha=alpha)
-                    
-                    else:
-                        kwargs[key] = kwargs[key][fileNo]
+        Parameters:
+        -----------
+        args: tuple
+            The arguments for the function.
 
-            with fits.open(self.datafile, memmap=True) as hdul:
-                data = hdul[0].data
-                data = torch.tensor(data.byteswap().newbyteorder(), dtype=torch.float32).to(device)
-            #data = torch.tensor(fits.getdata(file).byteswap().newbyteorder(), dtype=torch.float32).to(device)
-            
-            if CONVOLVE:
-                data = torch.tensor(convolve(data.cpu().numpy(), kwargs['kernel'], normalize_kernel=True), dtype=torch.float32).to(device)
-            
-            bkg = sep.Background(data.cpu().numpy(), bw=bw, bh=bh, fw=fw, fh=fh)
-            flux, _ , _ = sep.sum_circle(data.cpu().numpy(), x_list.cpu().numpy(), y_list.cpu().numpy(), aper_size, err=bkg.globalrms)
-            
-            result = {f"{file.rsplit('_', 2)[0].rsplit('_', 1)[1]}": flux}
+        Returns:
+        --------
+        result: dict
+            The flux of the apertures.
+        """
+    
+        fileNo, file, kwargs, device, bw, bh, fw, fh, x_list, y_list, aper_size, CONVOLVE = args
+        if isinstance(kwargs, dict):
+            for key in kwargs:                
+                if CONVOLVE:          
+                    if 'gamma' == key:
+                        gamma = kwargs[key][fileNo]
 
-            del data, bkg, flux
+                    elif 'alpha' == key:
+                        alpha = kwargs[key][fileNo]
+                        
+                    kwargs['kernel'] = Moffat2DKernel(gamma=gamma, alpha=alpha)
+                
+                else:
+                    kwargs[key] = kwargs[key][fileNo]
 
-            return result
+        with fits.open(self.datafile, memmap=True) as hdul:
+            data = hdul[0].data
+            data = torch.tensor(data.byteswap().newbyteorder(), dtype=torch.float32).to(device)
+        
+        if CONVOLVE:
+            data = torch.tensor(convolve(data.cpu().numpy(), kwargs['kernel'], normalize_kernel=True), dtype=torch.float32).to(device)
+        
+        bkg = sep.Background(data.cpu().numpy(), bw=bw, bh=bh, fw=fw, fh=fh)
+        flux, _ , _ = sep.sum_circle(data.cpu().numpy(), x_list.cpu().numpy(), y_list.cpu().numpy(), aper_size, err=bkg.globalrms)
+        
+        result = {f"{file.rsplit('_', 2)[0].rsplit('_', 1)[1]}": flux}
+
+        del data, bkg, flux
+
+        return result
         
     def make_apertures(self, data, step_size):
         """
@@ -667,7 +769,8 @@ def lim_mag(sigma):
     return (-2.5 * np.log10(5*sigma) + 23.90)
 
 
-'''
+''' 
+[Needs to be removed]
 def worker_wrapper(argkwargs):
     datafile, aper_size, bw, fw, kwargs = argkwargs
     return SkyCalibration(datafile, aper_size, bw, fw, **kwargs)
