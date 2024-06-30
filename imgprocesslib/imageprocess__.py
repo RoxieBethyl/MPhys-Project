@@ -38,18 +38,6 @@ Usage
 -----
 To use this module, instantiate the `ExtractObjectsFlux` class with the path to a FITS file. Optionally, background width and filter width parameters can be adjusted. The class provides methods for extracting objects and calculating their flux, as well as for convolving the image with a Moffat2DKernel.
 
-Example
--------
-```python
-from imageprocess__ import ExtractObjectsFlux
-
-# Initialize with a FITS file path
-extractor = ExtractObjectsFlux('path/to/fitsfile.fits')
-
-# Additional functionality can be explored by accessing methods within ExtractObjectsFlux
-This module is used to extract objects from a FITS file and find the flux of the objects in the file. 
-The module also contains a function to convolve the image with a Moffat2DKernel. 
-
 """
 
 import os

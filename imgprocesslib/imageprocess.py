@@ -57,15 +57,6 @@ Usage
 -----
 To use this module, instantiate the `ExtractObjectsFlux` class with the path to a FITS file and any desired parameters or keyword arguments. The class provides methods (not detailed here) for extracting objects and calculating their flux, which can be called on the instantiated object.
 
-Example
--------
-```python
-from imageprocess import ExtractObjectsFlux
-
-# Initialize with a FITS file path and optional parameters
-extractor = ExtractObjectsFlux('path/to/fitsfile.fits', bw=32, fw=5, PLOT=True)
-
-# Call methods on `extractor` to process the image
 """
 
 

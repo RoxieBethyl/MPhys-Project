@@ -36,16 +36,6 @@ Usage
 -----
 To use this module, instantiate the `SkyCalibration` class with the path to a FITS file and the desired aperture size. The class provides methods (not detailed here) for performing the sky calibration.
 
-Example
--------
-```python
-from calibrationcpu import SkyCalibration
-
-# Initialize the SkyCalibration class with a FITS file and aperture size
-calibrator = SkyCalibration('path/to/fitsfile.fits', aper_size=5)
-
-# Call methods on `calibrator` to perform sky calibration
-
 """
 
 from imgprocesslib import homedir

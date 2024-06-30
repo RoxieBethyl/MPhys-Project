@@ -41,6 +41,7 @@ MakeCatalogue
 Usage
 -----
 To use this module, instantiate the `MakeCatalogue` class with the required parameters and any optional keyword arguments. The class provides methods (not detailed here) for processing the FITS files and generating the catalogue.
+
 """
 
 

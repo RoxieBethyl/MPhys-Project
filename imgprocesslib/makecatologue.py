@@ -37,6 +37,7 @@ To use this module, instantiate the `MakeCatalogue` class and call its methods t
 Notes
 -----
 - Methods in this file may cause errors. 
+
 """
 
 

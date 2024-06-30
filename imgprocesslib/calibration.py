@@ -36,16 +36,6 @@ Usage
 -----
 To use this module, instantiate the `SkyCalibration` class with the path to a FITS file and the desired aperture size. Optional parameters include background width (bw) and filter width (fw).
 
-Example
--------
-```python
-from calibration import SkyCalibration
-
-# Initialize the SkyCalibration class with a FITS file and aperture size
-calibrator = SkyCalibration('path/to/fitsfile.fits', aper_size=5)
-
-# Additional methods can be called on the calibrator object to perform specific calibration tasks
-
 """
 
 
