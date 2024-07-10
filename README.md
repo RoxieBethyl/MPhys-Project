@@ -12,7 +12,7 @@ The repository is a record of the work I undertook while working on my research 
 - `Jades_files` (Not part of this repository): Data images taken from JWST. Analysis was performed on these data files.
 - [`Output`](https://github.com/RoxieBethyl/MPhys-Project/tree/main/Output): Main directory for all output files generated from code run in `imgprocesslib`.
   - [`Output\Catalogue`](https://github.com/RoxieBethyl/MPhys-Project/tree/main/Output/Catalogue): Master catalogue of relevant objects used for anaylsis is output into this directory. These files are used to produce plots to visualise results.
-- [`Photoz`](https://github.com/RoxieBethyl/MPhys-Project/tree/main/Photoz): Files necesary to run EaZY Photoz, taken from [`eazy-photoz` repo](https://github.com/gbrammer/eazy-photoz/), are stored in this folder.
+- [`Photoz`](https://github.com/RoxieBethyl/MPhys-Project/tree/main/Photoz): Files necesary to run EaZY Photoz, taken from [eazy-photoz repo](https://github.com/gbrammer/eazy-photoz/), are stored in this folder.
 - `Trash`: Here, all irrelevant files are dumped - in case for future reference.
 
 ### <ins>Notebooks</ins>
