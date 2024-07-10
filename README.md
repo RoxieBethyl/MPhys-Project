@@ -5,7 +5,7 @@
 
 The repository is a record of the work I undertook while working on my research project during my final year at the University of Edinburgh.
 
-#### <ins>Directories:</ins>
+### <ins>Directories:</ins>
 - [`Filter_files`](https://github.com/RoxieBethyl/MPhys-Project/tree/main/Filter_files): Holds the telescope datafiles. Taken from [SVO Filter Profile Service](http://svo2.cab.inta-csic.es/theory/fps/index.php?mode=browse)
 - `Images`: Output directory for the images used to present and descibe findings in the final report.
 - [`imgprocesslib`](https://github.com/RoxieBethyl/MPhys-Project/tree/main/imgprocesslib): Library of the scripts files developed for data analysis.
@@ -15,7 +15,7 @@ The repository is a record of the work I undertook while working on my research 
 - [`Photoz`](https://github.com/RoxieBethyl/MPhys-Project/tree/main/Photoz): Files necesary to run EaZY Photoz, taken from [`eazy-photoz` repo](https://github.com/gbrammer/eazy-photoz/), are stored in this folder.
 - `Trash`: Here, all irrelevant files are dumped - in case for future reference.
 
-#### <ins>Notebooks</ins>
+### <ins>Notebooks</ins>
 The notebooks used for this project are:
 - `Aper, Conv, Calib.ipynb`
 - `Depth Analysis.ipynb`
@@ -24,10 +24,10 @@ The notebooks used for this project are:
 - `Make Catalogue.ipynb` (Linux compatiable version: `Make Catalogue_linux.ipynb`)
 - `MPhys Proj.ipynb`
 
-#### Script Files:
+### Script Files:
 - `eazy_run.py`
 - `run_exe.py`
 
-#### <ins>Files:</ins>
+### <ins>Files:</ins>
 - `Init_Starlink.txt`: Contains the cmd lines to startup Starlink on WSL.
 - `EazyRun.param`:
