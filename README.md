@@ -24,7 +24,7 @@ The notebooks used for this project are:
 - `Make Catalogue.ipynb` (Linux compatible version: `Make Catalogue_linux.ipynb`)
 - `MPhys Proj.ipynb`
 
-### Script Files:
+### <ins>Script Files</ins>:
 - `eazy_run.py`
 - `run_exe.py`
 
