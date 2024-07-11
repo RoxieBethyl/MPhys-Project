@@ -2,7 +2,7 @@
 
 # <ins>MPhys Research Project:</ins> Hunting Emission Lines in High Redshift Galaxies with JWST
 
-The repository is a record of the work I undertook while working on my research project during my final year at the University of Edinburgh.
+This repository is a record of the work I undertook while working on my research project during my final year at the University of Edinburgh.
 
 ### <ins>Directories</ins>
 The purpose of the folders created during this project are listed below:
