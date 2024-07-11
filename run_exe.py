@@ -1,3 +1,34 @@
+"""
+Created on Wed Mar 06 11:02:26 2024
+Author: blybelle
+"""
+
+"""
+run_exe.py
+============
+
+Overview
+--------
+Custom script to run the image processing pipeline on the input files.
+
+Dependencies
+------------
+- os
+- numpy
+- pandas
+- imgprocesslib
+- astropy
+- ccdproc
+- matplotlib
+
+Usage:
+------
+This script can be called from the command line using the following command:
+    python run_exe.py
+
+"""
+
+
 import os
 
 import numpy as np
