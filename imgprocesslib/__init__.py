@@ -1,6 +1,6 @@
 """
 Created on Tue Sep 02 09:00:00 2020
-@author: blybelle
+Author: blybelle
 
 This module is part of a larger application related to image processing and cataloging. It sets up the environment by defining paths to important directories and conditionally imports specific modules based on the availability of a GPU.
 
