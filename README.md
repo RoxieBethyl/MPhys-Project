@@ -2,16 +2,16 @@
 
 # <ins>MPhys Research Project:</ins> Hunting Emission Lines in High Redshift Galaxies with JWST
 
-This repository is a record of the work I undertook while working on my research project during my final year at the University of Edinburgh.
+This repository is a record of the work I undertook while working on this project during my final year at the University of Edinburgh.
 
-### <ins>Directories</ins>
-The purpose of the folders created during this project are listed below:
-- [`Filter_files`](https://github.com/RoxieBethyl/MPhys-Project/tree/main/Filter_files): Holds the telescope datafiles. Taken from [SVO Filter Profile Service](http://svo2.cab.inta-csic.es/theory/fps/index.php?mode=browse)
-- `Images`: Output directory for the images used to present and describe findings in the final report.
-- [`imgprocesslib`](https://github.com/RoxieBethyl/MPhys-Project/tree/main/imgprocesslib): Library of the scripts files developed for data analysis.
-- `Jades_files` (Not part of this repository): Data images taken from JWST. Analysis was performed on these data files.
+### Directories
+The usage of the folders created, during this project are listed below:
+- [`Filter_files`](https://github.com/RoxieBethyl/MPhys-Project/tree/main/Filter_files): Holds information for the transmission output of the telescope. Taken from [SVO Filter Profile Service](http://svo2.cab.inta-csic.es/theory/fps/index.php?mode=browse)
+- `Images`: Output directory for images used to present and describe findings in the final report.
+- [`imgprocesslib`](https://github.com/RoxieBethyl/MPhys-Project/tree/main/imgprocesslib): Custom made library of scripts files developed for data analysis.
+- `Jades_files` (Not part of repository): Data images taken from JWST. Analysis is performed on these data files.
 - [`Output`](https://github.com/RoxieBethyl/MPhys-Project/tree/main/Output): Main directory for all output files generated from code run in `imgprocesslib`.
-  - [`Output\Catalogue`](https://github.com/RoxieBethyl/MPhys-Project/tree/main/Output/Catalogue): Master catalogue of relevant objects used for anaylsis is output into this directory. These files are used to produce plots to visualise results.
+  - [`Output\Catalogue`](https://github.com/RoxieBethyl/MPhys-Project/tree/main/Output/Catalogue): Master catalogue of relevant objects used for anaylsis, that is output into this directory. These files are used to constuct plots to visualise results.
 - [`Photoz`](https://github.com/RoxieBethyl/MPhys-Project/tree/main/Photoz): Files necesary to run EaZY Photoz, taken from [eazy-photoz](https://github.com/gbrammer/eazy-photoz/), are stored in this folder.
 - `Trash`: Here, all irrelevant files are dumped - in case for future reference.
 
