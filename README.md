@@ -1,7 +1,6 @@
 **Author:** Blythe Fernandes
 
-# MPhys Research Project
-## Hunting Emission Lines in High Redshift Galaxies with JWST
+# MPhys Research Project: Hunting Emission Lines in High Redshift Galaxies with JWST
 
 The repository is a record of the work I undertook while working on my research project during my final year at the University of Edinburgh.
 
