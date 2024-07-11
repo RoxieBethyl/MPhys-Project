@@ -1,3 +1,50 @@
+"""
+Created on Fri Mar 15 16:44:40 2024
+@author: blybelle
+"""
+
+"""
+eazy_run.py
+============
+
+Overview
+--------
+This script runs Eazy with parameters read from the EazyRun.param on the input file. 
+
+Dependencies
+------------
+- os
+- pickle
+- numpy
+- pandas
+- imgprocesslib
+- eazy
+
+Usage:
+------
+This script can be called from the command line using the following command:
+    python eazy_run.py
+
+The `EazyRun.param` file should contain the following parameters:
+    Catalogue: The name of the input file.
+    Outfile: The name of the output file.
+    MagCut: Whether to apply a magnitude cut. Defaults to True.
+    SigCut: Whether to apply a 5 sigma cut. Defaults to True.
+    MarkHeader: Whether to mark the header in the output file. Defaults to True.
+
+The output is written to a new file. The output from this script contains the following columns:
+    id: The ID of the object.
+    z_phot: The photometric redshift of the object.
+    chi2_best: The best chi-squared value.
+    z_err: The error associated with the redshift values.
+    mag_f335m: The magnitude in the F335M filter.
+    mag_f356w: The magnitude in the F356W filter.
+    mag_f410m: The magnitude in the F410M filter.
+    mag_f444w: The magnitude in the F444W filter.
+
+"""
+
+
 import os
 import pickle
 import numpy as np
@@ -8,6 +55,23 @@ import eazy
 PHOTO_DIR = os.path.join(homedir, 'Photoz/')
 
 def datawriter(data, filename, MarkHeader=True):
+    """
+    Writes the contents of a dictionary to an ASCII file.
+
+    Parameters:
+    -----------
+    data (dict):
+        The input dictionary containing the data to be written to the file.
+    filename (str):
+        The name of the output file.
+    MarkHeader (bool, optional):
+        Whether to mark the header in the output file. Defaults to True.
+    
+    Returns:
+    --------
+    None
+    """
+
     with open(filename, 'w+') as file:
         if MarkHeader:
             file.write('# ')
@@ -22,6 +86,31 @@ def datawriter(data, filename, MarkHeader=True):
 
 
 def writefile(dataframe, obj, Outfile, z_err, MagCut=True, SigCut=True, MarkHeader=True):
+    """
+    Writes the contents of a dataframe to an ASCII file with additional calculations and filters applied.
+
+    Parameters:
+    -----------
+    dataframe (pandas.DataFrame):
+        The input dataframe containing the data to be written to the file.
+    obj:
+        The object containing additional information needed for calculations.
+    Outfile (str):
+        The name of the output file.
+    z_err (float):
+        The error associated with the redshift values.
+    MagCut (bool, optional):
+        Whether to apply a magnitude cut. Defaults to True.
+    SigCut (bool, optional):
+        Whether to apply a 5 sigma cut. Defaults to True.
+    MarkHeader (bool, optional): 
+        Whether to mark the header in the output file. Defaults to True.
+
+    Returns:
+    --------
+    None
+    """
+
     dataframe["z_phot"] = obj.zml
     dataframe["chi2_best"] = obj.chi2_best
     dataframe["z_err"] = z_err
@@ -57,6 +146,27 @@ def writefile(dataframe, obj, Outfile, z_err, MagCut=True, SigCut=True, MarkHead
 
             
 def _run_eazy(filename, Outfile='./Output/EazyOutfile.txt', MagCut=True, SigCut=True, MarkHeader=True):
+    """
+    Runs Eazy on the input file and writes the output to a new file.
+
+    Parameters:
+    -----------
+    filename (str):
+        The name of the input file.
+    Outfile (str, optional):
+        The name of the output file. Defaults to './Output/EazyOutfile.txt'.
+    MagCut (bool, optional):
+        Whether to apply a magnitude cut. Defaults to True.
+    SigCut (bool, optional):
+        Whether to apply a 5 sigma cut. Defaults to True.
+    MarkHeader (bool, optional):
+        Whether to mark the header in the output file. Defaults to True.
+
+    Returns:
+    --------
+    None
+    """
+
     dataframe = pickle.load(open(filename, 'rb'))
     datawriter(dataframe, 'EazyCatologue.txt', MarkHeader=MarkHeader)
 
@@ -78,6 +188,14 @@ def _run_eazy(filename, Outfile='./Output/EazyOutfile.txt', MagCut=True, SigCut=
 
 
 def run_eazy():
+    """
+    Reads the parameters from the EazyRun.param file and runs Eazy on the input file.
+
+    Returns:
+    --------
+    None
+    """
+
     data_dict = {}
     with open('./EazyRun.param', 'r') as f:
         for line in f:
@@ -97,6 +215,7 @@ def run_eazy():
     _run_eazy(os.path.join(data_dict['Catalogue']), Outfile=os.path.join(data_dict['Outfile']), 
               MagCut=data_dict['MagCut'], SigCut=data_dict['SigCut'], MarkHeader=data_dict['MarkHeader'])
         
+
 
 if __name__ == "__main__":
     run_eazy()
